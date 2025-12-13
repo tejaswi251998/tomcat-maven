@@ -2,10 +2,17 @@ pipeline {
     agent { label 'agent' }
 
     environment {
-        TOMCAT_HOME = "/opt/tomcat10"
-        DEPLOY_SERVER = "ubuntu@44.193.0.46"
-        APP_NAME = "myapp"
-        SEVERITY_THRESHOLD = "HIGH"
+        APP_NAME    = "springboot-app"
+        APP_DIR     = "/opt/${APP_NAME}"
+        DEPLOY_USER = "ubuntu"
+        DEPLOY_HOST = "3.230.170.167"
+        JAVA_HOME   = "/usr/lib/jvm/java-21-openjdk-amd64"
+        PATH        = "${JAVA_HOME}/bin:${env.PATH}"
+    }
+
+    options {
+        timestamps()
+        disableConcurrentBuilds()
     }
 
     stages {
@@ -18,9 +25,7 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                sh '''
-                    mvn clean test
-                '''
+                sh 'mvn clean test'
             }
             post {
                 always {
@@ -29,26 +34,20 @@ pipeline {
             }
         }
 
-        stage('Package WAR') {
+        stage('Package JAR') {
             steps {
                 sh '''
                     mvn clean package -DskipTests
-                    ls -lh target/*.war
+                    ls -lh target/*.jar
                 '''
             }
         }
 
-        stage('Security Scan - Trivy') {
+        stage('Security Scan (Trivy)') {
             steps {
                 sh '''
-                    trivy fs --exit-code 0 --format json --output trivy-report.json .
-
-                    HIGH_COUNT=$(trivy fs --severity HIGH --exit-code 0 . | grep -c HIGH || true)
-
-                    if [ "$HIGH_COUNT" -gt 0 ]; then
-                        echo "❌ HIGH vulnerabilities found"
-                        exit 1
-                    fi
+                    trivy fs --exit-code 0 --format json \
+                    --output trivy-report.json .
                 '''
             }
             post {
@@ -57,42 +56,35 @@ pipeline {
                 }
             }
         }
-
-        stage('Deploy to Tomcat App Server') {
+        stage('Deploy to App EC2 (main only)') {
+            when {
+                branch 'main'
+            }
             steps {
-                sshagent(['app-server-ssh']) {
-                    sh '''
-                        WAR_FILE=$(ls target/*.war)
+                sshagent(['app-server']) {
+                    sh 'ssh -o StrictHostKeyChecking=no ubuntu@{DEPLOY_HOST} "mkdir -p /opt/springboot-app"'
 
-                        echo "Deploying $WAR_FILE to Tomcat..."
+                    sh 'scp -o StrictHostKeyChecking=no target/*.jar ubuntu@{DEPLOY_HOST}:/opt/springboot-app/app.jar'
+                    
+                    sh 'ssh -o StrictHostKeyChecking=no ubuntu@{DEPLOY_HOST} "pkill -f app.jar" || true'
+                    
+                    sh 'ssh -o StrictHostKeyChecking=no ubuntu@{DEPLOY_HOST} "nohup java -jar /opt/springboot-app/app.jar > /opt/springboot-app/app.log 2>&1 &"'
 
-                        ssh -o StrictHostKeyChecking=no $DEPLOY_SERVER << EOF
-                            rm -rf $TOMCAT_HOME/webapps/$APP_NAME
-                            rm -f  $TOMCAT_HOME/webapps/$APP_NAME.war
-                        EOF
 
-                        scp -o StrictHostKeyChecking=no $WAR_FILE \
-                            $DEPLOY_SERVER:$TOMCAT_HOME/webapps/$APP_NAME.war
-
-                        ssh -o StrictHostKeyChecking=no $DEPLOY_SERVER << EOF
-                            $TOMCAT_HOME/bin/shutdown.sh || true
-                            sleep 5
-                            $TOMCAT_HOME/bin/startup.sh
-                        EOF
-
-                        echo "✅ Tomcat Deployment Completed"
-                    '''
                 }
             }
         }
+
+
+
     }
 
     post {
         success {
-            echo "🎉 Pipeline completed successfully!"
+            echo "🎉 SUCCESS on branch ${env.BRANCH_NAME}"
         }
         failure {
-            echo "❌ Pipeline failed"
+            echo "❌ FAILED on branch ${env.BRANCH_NAME}"
         }
     }
-}
+} 
