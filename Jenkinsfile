@@ -33,25 +33,27 @@ pipeline {
                 }
             }
         }
+        
+
         stage('SonarQube Analysis') {
             steps {
-                withSonarQubeEnv('sonarqube') {
-                    sh '''
+                withSonarQubeEnv('sonarcloud') {
+                    sh """
                       mvn sonar:sonar \
-                      -Dsonar.projectKey=petclinic \
-                      -Dsonar.projectName=petclinic \
-                      -Dsonar.host.url=http://<SONAR_HOST>:9000 \
-                      -Dsonar.login=$SONAR_TOKEN
-                    '''
+                      -Dsonar.projectKey=tejaswi251998_tomcat-maven \
+                      -Dsonar.organization=tejaswi251998 \
+                      -Dsonar.host.url=https://sonarcloud.io
+                    """
                 }
             }
         }
 
-        stage('Quality Gate Info') {
+        stage('Quality Gate (Manual Review)') {
             steps {
-                echo "Quality Gate status must be reviewed manually in SonarQube UI (Free Edition limitation)."
+                echo "Quality Gate is evaluated in SonarCloud UI (Free tier)."
             }
         }
+
 
 
         stage('Package JAR') {
