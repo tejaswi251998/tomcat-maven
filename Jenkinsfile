@@ -83,11 +83,13 @@ pipeline {
             slackSend(
                 message: "✅ SUCCESS: Job ${env.JOB_NAME} #${env.BUILD_NUMBER} on branch ${env.BRANCH_NAME}"
             )
-            emailext(
-                subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                body: "Build succeeded on branch ${env.BRANCH_NAME}",
-                to: "tejaswi98e@gmail.com"
-            )
+            node('jenkins'){
+                emailext(
+                    subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    body: "Build succeeded on branch ${env.BRANCH_NAME}",
+                    to: "tejaswi98e@gmail.com"
+                )
+            }
         }
         failure {
             echo "❌ FAILED on branch ${env.BRANCH_NAME}"
