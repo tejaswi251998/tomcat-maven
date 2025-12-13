@@ -33,6 +33,18 @@ pipeline {
                 }
             }
         }
+        stage('SonarQube Analysis') {
+            steps {
+                withSonarQubeEnv('sonarcloud') {
+                    sh """
+                        mvn sonar:sonar \
+                        -Dsonar.projectKey=tejaswi251998_tomcat-maven \
+                        -Dsonar.organization=tejaswi251998 \
+                        -Dsonar.host.url=https://sonarcloud.io
+                    """
+                }
+            }
+        }
 
         stage('Package JAR') {
             steps {
