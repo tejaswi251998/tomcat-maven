@@ -21,6 +21,13 @@ pipeline {
             steps {
                 checkout scm
             }
+            post {
+                emailext(
+                    subject: "SUCCESS: ${env.JOB_NAME} #${env.BUILD_NUMBER}",
+                    body: "Build succeeded on branch ${env.BRANCH_NAME}",
+                    to: "tejaswi98e@gmail.com"
+                )
+            }
         }
 
         stage('Build & Test') {
