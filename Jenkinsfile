@@ -58,7 +58,7 @@ pipeline {
         }
         stage('Deploy to App EC2 (main only)') {
             when {
-                branch 'main'
+                branch 'develop'
             }
             steps {
                 sshagent(['app-server']) {
