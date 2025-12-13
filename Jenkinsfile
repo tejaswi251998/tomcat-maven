@@ -33,7 +33,38 @@ pipeline {
                 }
             }
         }
-
+        stage('Security Scan - OWASP Dependency Check') {
+              environment {
+                NVD_API_KEY = credentials('owasp-apikey')
+                DC_DATA_DIR = "${WORKSPACE}/.dc-data"
+                DC_OUT_DIR  = "${WORKSPACE}/dependency-check-report"
+              }
+              steps {
+                sh '''
+                  set -e
+                  rm -rf "$DC_DATA_DIR" "$DC_OUT_DIR"
+                  mkdir -p "$DC_DATA_DIR" "$DC_OUT_DIR"
+                '''
+        
+                dependencyCheck(
+                  odcInstallation: 'dependency-check',
+                  additionalArguments: """
+                    --scan .
+                    --format HTML
+                    --out "${DC_OUT_DIR}"
+                    --data "${DC_DATA_DIR}"
+                    --nvdApiKey "${NVD_API_KEY}"
+                    --failOnCVSS 7
+                    --disableAssembly
+                  """
+                )
+              }
+              post {
+                always {
+                  archiveArtifacts artifacts: 'dependency-check-report/**', fingerprint: true, allowEmptyArchive: true
+                }
+              }
+            }
         stage('Package JAR') {
             steps {
                 sh '''
@@ -42,7 +73,7 @@ pipeline {
                 '''
             }
         }
-
+        
         stage('Security Scan (Trivy)') {
             steps {
                 sh '''
