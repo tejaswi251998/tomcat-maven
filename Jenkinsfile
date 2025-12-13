@@ -80,6 +80,9 @@ pipeline {
     post {
         success {
             echo "🎉 SUCCESS on branch ${env.BRANCH_NAME}"
+            slackSend(
+                message: "✅ SUCCESS: Job ${env.JOB_NAME} #${env.BUILD_NUMBER} on branch ${env.BRANCH_NAME}"
+            )
         }
         failure {
             echo "❌ FAILED on branch ${env.BRANCH_NAME}"
