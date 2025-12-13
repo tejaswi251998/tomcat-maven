@@ -5,7 +5,7 @@ pipeline {
         APP_NAME    = "springboot-app"
         APP_DIR     = "/opt/${APP_NAME}"
         DEPLOY_USER = "ubuntu"
-        DEPLOY_HOST = "3.230.170.167"
+        DEPLOY_HOST = "34.239.1.185"
         JAVA_HOME   = "/usr/lib/jvm/java-21-openjdk-amd64"
         PATH        = "${JAVA_HOME}/bin:${env.PATH}"
     }
