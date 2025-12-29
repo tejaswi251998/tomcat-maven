@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'test-node' }
+    agent { label 'maven-agent' }
 
     environment {
         APP_NAME    = "springboot-app"
