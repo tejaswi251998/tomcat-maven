@@ -5,7 +5,7 @@ pipeline {
         APP_NAME    = "springboot-app"
         APP_DIR     = "/opt/${APP_NAME}"
         DEPLOY_USER = "ubuntu"
-        DEPLOY_HOST = "34.239.1.185"
+        DEPLOY_HOST = "44.214.6.3"
         JAVA_HOME   = "/usr/lib/jvm/java-21-openjdk-amd64"
         PATH        = "${JAVA_HOME}/bin:${env.PATH}"
     }
@@ -34,25 +34,6 @@ pipeline {
             }
         }
         
-
-        stage('SonarQube Analysis') {
-            steps {
-                withSonarQubeEnv('sonarcloud') {
-                    sh """
-                      mvn sonar:sonar \
-                      -Dsonar.projectKey=tejaswi251998_tomcat-maven \
-                      -Dsonar.organization=tejaswi251998 \
-                      -Dsonar.host.url=https://sonarcloud.io
-                    """
-                }
-            }
-        }
-
-        stage('Quality Gate (Manual Review)') {
-            steps {
-                echo "Quality Gate is evaluated in SonarCloud UI (Free tier)."
-            }
-        }
 
 
 
